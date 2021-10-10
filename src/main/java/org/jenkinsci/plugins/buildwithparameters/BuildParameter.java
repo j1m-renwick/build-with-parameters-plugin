@@ -14,11 +14,18 @@ public class BuildParameter {
     private final String name;
     private final String description;
     private String value;
+    private Object toBind;
     private List<String> choices = null;
 
     public BuildParameter(String name, String description) {
         this.name = name;
         this.description = description;
+    }
+
+    public BuildParameter(String name, String description, Object toBind) {
+        this.name = name;
+        this.description = description;
+        this.toBind = toBind;
     }
 
     public static boolean isDefaultPasswordPlaceholder(String candidate) {
@@ -68,4 +75,7 @@ public class BuildParameter {
         this.choices = choices;
     }
 
+    public Object getToBind() { return toBind; }
+
+    public void setToBind(Object toBind) {this.toBind = toBind;}
 }

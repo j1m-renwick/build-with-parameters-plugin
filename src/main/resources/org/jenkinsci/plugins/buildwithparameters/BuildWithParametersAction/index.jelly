@@ -1,5 +1,8 @@
 <?jelly escape-by-default='true'?>
-<j:jelly xmlns:j="jelly:core" xmlns:l="/lib/layout" xmlns:f="/lib/form">
+<j:jelly xmlns:j="jelly:core" xmlns:l="/lib/layout" xmlns:st="jelly:stapler" xmlns:f="/lib/form">
+    <st:adjunct includes="org.kohsuke.stapler.jquery"/>
+    <st:adjunct includes="unochoice.stapler.unochoice"/>
+
     <l:layout title="${%Build With Parameters}" norefresh="true" permission="${it.requiredPermission}">
         <l:side-panel>
             <l:tasks>
@@ -8,11 +11,13 @@
         </l:side-panel>
         <l:main-panel>
             <h2>Trigger ${it.projectName}</h2>
+            <f:textarea name="it object" value="${it}"/>
             <f:form method="post" action="configSubmit" name="config">
                 <j:forEach var="parameter" items="${it.availableParameters}">
-                    <j:set var="escapeEntryTitleAndDescription" value="true"/>
+<!--                    The line below disables html formatting -->
+<!--                    <j:set var="escapeEntryTitleAndDescription" value="true"/>-->
                     <f:entry title="${parameter.name}" description="${parameter.description}">
-                        <div name="parameter">
+                        <div id="${parameter.name}" name="parameter">
                             <j:choose>
                                 <j:when test="${parameter.type == 'PASSWORD'}">
                                     <f:password name="${parameter.name}" value="${parameter.value}"/>
@@ -29,6 +34,65 @@
                                 </j:when>
                                 <j:when test="${parameter.type == 'TEXT'}">
                                     <f:textarea name="${parameter.name}" value="${parameter.value}"/>
+                                </j:when>
+                                <j:when test="${parameter.type == 'ACTIVE_CHOICE'}">
+                                    <f:textarea name="it object" value="${parameter.toBind}"/>
+                                    <select name="${parameter.name}">
+                                        <j:forEach var="value" items="${parameter.choices}">
+                                            <f:option selected="${parameter.value == value}">${value}</f:option>
+                                        </j:forEach>
+                                    </select>
+                                </j:when>
+                                <j:when test="${parameter.type == 'ACTIVE_CHOICE_CASCADE'}">
+                                    <select name="${parameter.name}">
+                                        <j:forEach var="value" items="${parameter.choices}">
+                                            <f:option selected="${parameter.value == value}">${value}</f:option>
+                                        </j:forEach>
+                                    </select>
+                                    <script type="text/javascript">
+
+                                        console.log("running script for ACTIVE_CHOICE_CASCADE");
+
+                                        if (window.makeStaplerProxy) {
+                                            window.__old__makeStaplerProxy = window.makeStaplerProxy;
+                                            window.makeStaplerProxy = UnoChoice.makeStaplerProxy2;
+                                        }
+                                        var cascadeChoiceParameter = <st:bind value="${parameter.toBind}"/>; // Create cascading object proxy
+                                        if (window.makeStaplerProxy) {
+                                            window.makeStaplerProxy = window.__old__makeStaplerProxy;
+                                        }
+
+                                        var referencedParameters = Array();
+                                        <j:forEach var="value" items="${parameter.toBind.getReferencedParametersAsArray()}">
+                                            // add the element we want to monitor
+                                            console.log("found referenced parameter ${value}")
+                                            referencedParameters.push("${value}");
+                                        </j:forEach>
+
+                                        // find the cascade parameter element
+                                        var parentDiv = jQuery('#${parameter.name}');
+                                        var parameterHtmlElement = parentDiv.find('SELECT');
+                                        if (!parameterHtmlElement || parameterHtmlElement.length == 0) {
+                                            console.log('Could not find element');
+                                        } else {
+                                            var cascadeParameter = new UnoChoice.CascadeParameter("${parameter.name}", parameterHtmlElement.get(0), '${parameter.name}_random', cascadeChoiceParameter);
+
+                                            for (var i  = 0; i &lt; referencedParameters.length ; ++i) {
+
+                                                var parameterElement = jQuery('#' + referencedParameters[i]).find("INPUT")
+                                                if (parameterElement.length === 0) {
+                                                    parameterElement = jQuery('#' + referencedParameters[i]).find("SELECT").get(0)
+                                                } else {
+                                                    parameterElement = parameterElement.get(0);
+                                                }
+
+                                                new UnoChoice.ReferencedParameter(referencedParameters[i], parameterElement, cascadeParameter);
+
+                                            }
+                                            cascadeParameter.update();
+                                        }
+
+                                    </script>
                                 </j:when>
                                 <j:otherwise>
                                     <f:textbox name="${parameter.name}" value="${parameter.value}"/>

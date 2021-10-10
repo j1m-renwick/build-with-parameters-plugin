@@ -1,5 +1,6 @@
 package org.jenkinsci.plugins.buildwithparameters;
 
+import com.google.common.collect.Lists;
 import hudson.model.Action;
 import hudson.model.BooleanParameterDefinition;
 import hudson.model.BooleanParameterValue;
@@ -20,10 +21,17 @@ import hudson.util.Secret;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
 import javax.servlet.ServletException;
 import jenkins.model.Jenkins;
 import jenkins.model.ParameterizedJobMixIn.ParameterizedJob;
 import net.sf.json.JSONObject;
+import org.biouno.unochoice.CascadeChoiceParameter;
+import org.biouno.unochoice.ChoiceParameter;
+import org.biouno.unochoice.DynamicReferenceParameter;
+import org.biouno.unochoice.UnoChoiceParameter;
 import org.kohsuke.stapler.Stapler;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
@@ -48,7 +56,7 @@ public class BuildWithParametersAction<T extends Job<?, ?> & ParameterizedJob> i
     }
 
     public List<BuildParameter> getAvailableParameters() {
-        List<BuildParameter> buildParameters = new ArrayList<BuildParameter>();
+        List<BuildParameter> buildParameters = new ArrayList<>();
 
         for (ParameterDefinition parameterDefinition : getParameterDefinitions()) {
             BuildParameter buildParameter = new BuildParameter(parameterDefinition.getName(), parameterDefinition.getDescription());
@@ -63,9 +71,29 @@ public class BuildWithParametersAction<T extends Job<?, ?> & ParameterizedJob> i
                 buildParameter.setType(BuildParameterType.STRING);
             } else if (parameterDefinition.getClass().isAssignableFrom(TextParameterDefinition.class)) {
                 buildParameter.setType(BuildParameterType.TEXT);
+            }  else if (parameterDefinition.getClass().isAssignableFrom(ChoiceParameter.class)) {
+                buildParameter.setType(BuildParameterType.ACTIVE_CHOICE);
+
+                List<String> arr = ((ChoiceParameter) parameterDefinition).getChoices().values()
+                        .stream()
+                        .map(Object::toString)
+                        .collect(Collectors.toList());
+
+                buildParameter.setChoices(arr);
+            } else if (parameterDefinition.getClass().isAssignableFrom(CascadeChoiceParameter.class)) {
+                buildParameter.setType(BuildParameterType.ACTIVE_CHOICE_CASCADE);
+                List<String> arr = ((CascadeChoiceParameter) parameterDefinition).getChoices().values()
+                        .stream()
+                        .map(Object::toString)
+                        .collect(Collectors.toList());
+
+                buildParameter.setChoices(arr);
+
+                buildParameter.setToBind(((CascadeChoiceParameter) parameterDefinition));
             } else {
                 // default to string
                 buildParameter.setType(BuildParameterType.STRING);
+//                buildParameter.setChoices(Lists.asList(parameterDefinition.getClass().getName(), new String[]{}));
             }
 
             try {
@@ -106,7 +134,7 @@ public class BuildWithParametersAction<T extends Job<?, ?> & ParameterizedJob> i
     public void doConfigSubmit(StaplerRequest req, StaplerResponse rsp) throws IOException, ServletException {
         project.checkPermission(BuildableItem.BUILD);
 
-        List<ParameterValue> values = new ArrayList<ParameterValue>();
+        List<ParameterValue> values = new ArrayList<>();
 
         JSONObject formData = req.getSubmittedForm();
         if (!formData.isEmpty()) {
