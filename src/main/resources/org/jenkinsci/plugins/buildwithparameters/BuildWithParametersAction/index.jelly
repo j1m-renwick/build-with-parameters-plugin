@@ -11,10 +11,9 @@
         </l:side-panel>
         <l:main-panel>
             <h2>Trigger ${it.projectName}</h2>
-            <f:textarea name="it object" value="${it}"/>
             <f:form method="post" action="configSubmit" name="config">
                 <j:forEach var="parameter" items="${it.availableParameters}">
-<!--                    The line below disables html formatting -->
+<!--                    Uncomment the line below to disable html formatting -->
 <!--                    <j:set var="escapeEntryTitleAndDescription" value="true"/>-->
                     <f:entry title="${parameter.name}" description="${parameter.description}">
                         <div id="${parameter.name}" name="parameter">
@@ -36,7 +35,6 @@
                                     <f:textarea name="${parameter.name}" value="${parameter.value}"/>
                                 </j:when>
                                 <j:when test="${parameter.type == 'ACTIVE_CHOICE'}">
-                                    <f:textarea name="it object" value="${parameter.toBind}"/>
                                     <select name="${parameter.name}">
                                         <j:forEach var="value" items="${parameter.choices}">
                                             <f:option selected="${parameter.value == value}">${value}</f:option>
@@ -50,8 +48,6 @@
                                         </j:forEach>
                                     </select>
                                     <script type="text/javascript">
-
-                                        console.log("running script for ACTIVE_CHOICE_CASCADE");
 
                                         if (window.makeStaplerProxy) {
                                             window.__old__makeStaplerProxy = window.makeStaplerProxy;
@@ -79,12 +75,12 @@
 
                                             for (var i  = 0; i &lt; referencedParameters.length ; ++i) {
 
+                                                <!-- currently only INPUT and SELECT referenced parameters are supported for cascading  -->
                                                 var parameterElement = jQuery('#' + referencedParameters[i]).find("INPUT")
                                                 if (parameterElement.length === 0) {
-                                                    parameterElement = jQuery('#' + referencedParameters[i]).find("SELECT").get(0)
-                                                } else {
-                                                    parameterElement = parameterElement.get(0);
+                                                    parameterElement = jQuery('#' + referencedParameters[i]).find("SELECT")
                                                 }
+                                                parameterElement = parameterElement.get(0);
 
                                                 new UnoChoice.ReferencedParameter(referencedParameters[i], parameterElement, cascadeParameter);
 

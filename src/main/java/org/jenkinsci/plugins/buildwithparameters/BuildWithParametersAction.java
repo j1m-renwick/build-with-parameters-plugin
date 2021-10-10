@@ -1,6 +1,5 @@
 package org.jenkinsci.plugins.buildwithparameters;
 
-import com.google.common.collect.Lists;
 import hudson.model.Action;
 import hudson.model.BooleanParameterDefinition;
 import hudson.model.BooleanParameterValue;
@@ -21,8 +20,6 @@ import hudson.util.Secret;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import javax.servlet.ServletException;
 import jenkins.model.Jenkins;
@@ -30,8 +27,6 @@ import jenkins.model.ParameterizedJobMixIn.ParameterizedJob;
 import net.sf.json.JSONObject;
 import org.biouno.unochoice.CascadeChoiceParameter;
 import org.biouno.unochoice.ChoiceParameter;
-import org.biouno.unochoice.DynamicReferenceParameter;
-import org.biouno.unochoice.UnoChoiceParameter;
 import org.kohsuke.stapler.Stapler;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
@@ -93,7 +88,6 @@ public class BuildWithParametersAction<T extends Job<?, ?> & ParameterizedJob> i
             } else {
                 // default to string
                 buildParameter.setType(BuildParameterType.STRING);
-//                buildParameter.setChoices(Lists.asList(parameterDefinition.getClass().getName(), new String[]{}));
             }
 
             try {
