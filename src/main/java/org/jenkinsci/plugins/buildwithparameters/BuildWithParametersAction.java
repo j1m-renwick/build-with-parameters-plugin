@@ -1,5 +1,6 @@
 package org.jenkinsci.plugins.buildwithparameters;
 
+import com.google.common.base.Splitter;
 import hudson.model.Action;
 import hudson.model.BooleanParameterDefinition;
 import hudson.model.BooleanParameterValue;
@@ -19,7 +20,9 @@ import hudson.model.TextParameterDefinition;
 import hudson.util.Secret;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import javax.servlet.ServletException;
 import jenkins.model.Jenkins;
@@ -40,7 +43,6 @@ public class BuildWithParametersAction<T extends Job<?, ?> & ParameterizedJob> i
     public BuildWithParametersAction(T project) {
         this.project = project;
     }
-
     //////////////////
     //              //
     //     VIEW     //
@@ -52,6 +54,13 @@ public class BuildWithParametersAction<T extends Job<?, ?> & ParameterizedJob> i
 
     public List<BuildParameter> getAvailableParameters() {
         List<BuildParameter> buildParameters = new ArrayList<>();
+        List<String> disabledList = new ArrayList<>();
+
+        String rawQueryParams = Stapler.getCurrentRequest().getQueryString();
+        if (rawQueryParams != null) {
+            Map<String, String> queryParamMap = Splitter.on('&').trimResults().withKeyValueSeparator("=").split(rawQueryParams);
+            disabledList = Arrays.asList(queryParamMap.getOrDefault("disabled", "").split(","));
+        }
 
         for (ParameterDefinition parameterDefinition : getParameterDefinitions()) {
             BuildParameter buildParameter = new BuildParameter(parameterDefinition.getName(), parameterDefinition.getDescription());
@@ -96,6 +105,7 @@ public class BuildWithParametersAction<T extends Job<?, ?> & ParameterizedJob> i
                 // If a value was provided that does not match available options, leave the value blank.
             }
 
+            buildParameter.setDisabled(disabledList.contains(parameterDefinition.getName()));
             buildParameters.add(buildParameter);
         }
 

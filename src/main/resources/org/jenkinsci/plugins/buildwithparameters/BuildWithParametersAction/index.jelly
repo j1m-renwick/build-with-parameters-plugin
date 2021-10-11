@@ -1,5 +1,12 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:l="/lib/layout" xmlns:st="jelly:stapler" xmlns:f="/lib/form">
+    <style type="text/css">
+        .disabled-parameter {
+            opacity: 0.6;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+    </style>
     <st:adjunct includes="org.kohsuke.stapler.jquery"/>
     <st:adjunct includes="unochoice.stapler.unochoice"/>
 
@@ -16,7 +23,7 @@
 <!--                    Uncomment the line below to disable html formatting -->
 <!--                    <j:set var="escapeEntryTitleAndDescription" value="true"/>-->
                     <f:entry title="${parameter.name}" description="${parameter.description}">
-                        <div id="${parameter.name}" name="parameter">
+                        <div id="${parameter.name}" name="parameter" class="${parameter.disabled ? 'disabled-parameter' : ''}">
                             <j:choose>
                                 <j:when test="${parameter.type == 'PASSWORD'}">
                                     <f:password name="${parameter.name}" value="${parameter.value}"/>
